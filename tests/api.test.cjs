@@ -1,0 +1,6 @@
+const test=require("node:test");const assert=require("node:assert/strict");const h=require("../api/generate.js");
+const res=()=>({statusCode:200,setHeader(){return this},status(n){this.statusCode=n;return this},json(o){this.data=o;return this}});
+test("comparação de códigos",()=>{assert.equal(h.compare("1234","1234"),true);assert.equal(h.compare("1234","1235"),false);assert.equal(h.compare("a","bb"),false)});
+test("bloqueia GET",async()=>{const r=res();await h({method:"GET"},r);assert.equal(r.statusCode,405)});
+test("bloqueia sem configuração",async()=>{const k=process.env.OPENAI_API_KEY,p=process.env.LIVE_ADMIN_CODE;delete process.env.OPENAI_API_KEY;delete process.env.LIVE_ADMIN_CODE;try{const r=res();await h({method:"POST",headers:{}},r);assert.equal(r.statusCode,503)}finally{if(k)process.env.OPENAI_API_KEY=k;if(p)process.env.LIVE_ADMIN_CODE=p}});
+test("bloqueia PIN incorreto",async()=>{process.env.OPENAI_API_KEY="fake";process.env.LIVE_ADMIN_CODE="12345";try{const r=res();await h({method:"POST",headers:{"x-live-code":"bad"}},r);assert.equal(r.statusCode,401)}finally{delete process.env.OPENAI_API_KEY;delete process.env.LIVE_ADMIN_CODE}});
